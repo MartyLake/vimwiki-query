@@ -1,0 +1,1 @@
+"""vimwiki-query prototype package."""
