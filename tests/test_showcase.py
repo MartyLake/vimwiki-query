@@ -79,3 +79,43 @@ def test_showcase_diary_mentions_of_project_query_outputs_diary_links() -> None:
     assert result.returncode == 0, result.stderr
     assert "# Diary mentions of /projects/vimwiki-query" in result.stdout
     assert "[[/diary/2026-03-17]] write cookbook examples for [[/projects/vimwiki-query]]" in result.stdout
+
+
+def test_showcase_backlinks_query_outputs_pages_linking_to_project() -> None:
+    result = run_showcase_query("backlinks-to-vimwiki-query.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Backlinks to projects/vimwiki-query.md" in result.stdout
+    assert "- [[/diary/2026-03-17]]" in result.stdout
+
+
+def test_showcase_orphan_pages_query_outputs_orphan_note() -> None:
+    result = run_showcase_query("orphan-pages.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Orphan pages" in result.stdout
+    assert "- [[/scratch/lonely-note]]" in result.stdout
+
+
+def test_showcase_due_date_query_outputs_matching_tasks() -> None:
+    result = run_showcase_query("tasks-due-2026-03-20.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Tasks due 2026-03-20" in result.stdout
+    assert "[[/diary/2026-03-18]] send project recap to [[/people/Bob]] for [[/projects/vimwiki-query]]" in result.stdout
+
+
+def test_showcase_context_query_outputs_matching_tasks() -> None:
+    result = run_showcase_query("tasks-in-context-writing.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Tasks in @writing" in result.stdout
+    assert "[[/diary/2026-03-17]] write cookbook examples for [[/projects/vimwiki-query]]" in result.stdout
+
+
+def test_showcase_project_page_task_query_uses_inherited_frontmatter() -> None:
+    result = run_showcase_query("open-tasks-from-project-pages.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Open tasks from project pages" in result.stdout
+    assert "[[/projects/vimwiki-query]] collect backlink query ideas" in result.stdout

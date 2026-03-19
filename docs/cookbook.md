@@ -85,6 +85,41 @@ bin/vimwiki-query scan --root ~/Wiki --format ndjson \
     '
 ```
 
+### Backlinks To One Project
+
+```sh
+TARGET='projects/vimwiki-query.md'
+bin/vimwiki-query scan --root ~/Wiki --format json \
+  | jq -r --arg target "$TARGET" '
+      "# Backlinks to \($target)",
+      (
+        .pages
+        | map(select(.file.outlinks | index($target)))
+        | sort_by(.rel_path)
+        | .[]
+        | "- [[/" + (.rel_path | sub("\\.md$"; "")) + "]]"
+      )
+    '
+```
+
+### Open Tasks From Project Pages
+
+This uses task inheritance from the owning page frontmatter.
+
+```sh
+bin/vimwiki-query scan --root ~/Wiki --format json \
+  | jq -r '
+      "# Open tasks from project pages",
+      (
+        .tasks
+        | map(select((.completed | not) and .page.frontmatter.type == "project"))
+        | sort_by(.rel_path, .line)
+        | .[]
+        | "- [[/" + (.rel_path | sub("\\.md$"; "")) + "]] " + .text
+      )
+    '
+```
+
 ## Blog Posts
 
 ### Draft Queue
@@ -177,6 +212,56 @@ bin/vimwiki-query scan --root ~/Wiki --format ndjson \
           )
         )
         | sort_by(.rel_path)
+        | .[]
+        | "- [[/" + (.rel_path | sub("\\.md$"; "")) + "]] " + .text
+      )
+    '
+```
+
+### Orphan Pages
+
+```sh
+bin/vimwiki-query scan --root ~/Wiki --format json \
+  | jq -r '
+      "# Orphan pages",
+      (
+        .pages
+        | map(select((.file.inlinks | length) == 0 and (.file.outlinks | length) == 0))
+        | sort_by(.rel_path)
+        | .[]
+        | "- [[/" + (.rel_path | sub("\\.md$"; "")) + "]]"
+      )
+    '
+```
+
+### Tasks Due On A Specific Date
+
+```sh
+DUE='2026-03-20'
+bin/vimwiki-query scan --root ~/Wiki --format json \
+  | jq -r --arg due "$DUE" '
+      "# Tasks due \($due)",
+      (
+        .tasks
+        | map(select(.due == $due))
+        | sort_by(.rel_path, .line)
+        | .[]
+        | "- [[/" + (.rel_path | sub("\\.md$"; "")) + "]] " + .text
+      )
+    '
+```
+
+### Tasks In One GTD Context
+
+```sh
+CONTEXT='writing'
+bin/vimwiki-query scan --root ~/Wiki --format json \
+  | jq -r --arg context "$CONTEXT" '
+      "# Tasks in @\($context)",
+      (
+        .tasks
+        | map(select(.contexts | index($context)))
+        | sort_by(.rel_path, .line)
         | .[]
         | "- [[/" + (.rel_path | sub("\\.md$"; "")) + "]] " + .text
       )
