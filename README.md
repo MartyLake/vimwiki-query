@@ -13,6 +13,7 @@ Primary design decisions:
 Detailed handoff:
 
 - [docs/handoff.md](/Users/mtt/.vim/bundle/vimwiki-query/docs/handoff.md)
+- [docs/cookbook.md](/Users/mtt/.vim/bundle/vimwiki-query/docs/cookbook.md)
 
 ## Prototype
 
