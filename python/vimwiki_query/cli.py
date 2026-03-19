@@ -3,10 +3,8 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from pathlib import Path
 
-from vimwiki_query.discovery import discover_markdown_files
-from vimwiki_query.parser import parse_markdown_file
+from vimwiki_query.scanner import scan_wiki
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,10 +24,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.command == "scan":
-            records = []
-            root = Path(args.root)
-            for rel_path in discover_markdown_files(root):
-                records.extend(parse_markdown_file(root, rel_path))
+            records = scan_wiki(args.root)
 
             if args.format == "ndjson":
                 for record in records:

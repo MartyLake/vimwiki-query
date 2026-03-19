@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 FRONTMATTER_DELIMITER = "---"
@@ -9,6 +9,10 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*\S)\s*$")
 TASK_RE = re.compile(r"^(\s*)[-*]\s+\[([ xX.])\]\s+(.*)$")
 INLINE_TAG_RE = re.compile(r"(?<!\w)#([A-Za-z0-9_-]+)")
 WIKILINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
+DATE_RE = re.compile(r"\b(\d{2,4}-\d{2}-\d{2})\b")
+DUE_RE = re.compile(r"\bdue:(\d{2,4}-\d{2}-\d{2})\b")
+PROJECT_RE = re.compile(r"(?:^|\s)\+([^\s]+)")
+CONTEXT_RE = re.compile(r"(?:^|\s)@([^\s]+)")
 
 
 def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
@@ -16,11 +20,13 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
     abs_path = root_path / rel_path
     raw_text = abs_path.read_text(encoding="utf-8")
     lines = raw_text.splitlines()
+    stat_result = abs_path.stat()
 
     frontmatter, body_start = _parse_frontmatter(lines)
     title = _resolve_title(frontmatter, lines[body_start:], Path(rel_path).stem)
     page_tags = _normalize_tags(frontmatter.get("tags", []))
-    file_info = _build_file_info(rel_path, title, page_tags)
+    file_info = _build_file_info(rel_path, title, page_tags, stat_result.st_ctime, stat_result.st_mtime)
+    page_info = _build_page_info(rel_path, abs_path, title, page_tags, frontmatter)
 
     records: list[dict] = [
         {
@@ -34,7 +40,7 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
             "text": title,
             "tags": page_tags,
             "frontmatter": frontmatter,
-            "file": file_info,
+            "file": {**file_info, "inlinks": [], "outlinks": []},
         }
     ]
 
@@ -76,6 +82,7 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
             marker = task_match.group(2)
             raw_task_text = task_match.group(3)
             status, completed = _task_status(marker)
+            due = _extract_due_date(raw_task_text)
             records.append(
                 {
                     "type": "task",
@@ -90,13 +97,19 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
                     "status": status,
                     "completed": completed,
                     "tags": _extract_inline_tags(raw_task_text),
+                    "due": due,
+                    "dates": _extract_dates(raw_task_text, due),
+                    "projects": _extract_gtd_projects(raw_task_text),
+                    "contexts": _extract_gtd_contexts(raw_task_text),
                     "section": current_section,
                     "file": file_info,
+                    "page": page_info,
                 }
             )
 
         for match in WIKILINK_RE.finditer(line):
             target = match.group(1)
+            resolved_path = _resolve_wikilink(rel_path, target)
             records.append(
                 {
                     "type": "link",
@@ -109,6 +122,9 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
                     "text": target,
                     "tags": page_tags,
                     "target": target,
+                    "target_anchor": _extract_target_anchor(target),
+                    "resolved_path": resolved_path,
+                    "resolved": (root_path / resolved_path).is_file(),
                     "file": file_info,
                 }
             )
@@ -172,7 +188,7 @@ def _resolve_title(frontmatter: dict, body_lines: list[str], fallback: str) -> s
     return fallback
 
 
-def _build_file_info(rel_path: str, title: str, page_tags: list[str]) -> dict:
+def _build_file_info(rel_path: str, title: str, page_tags: list[str], ctime: float, mtime: float) -> dict:
     path = Path(rel_path)
     folder = "" if str(path.parent) == "." else str(path.parent)
     return {
@@ -182,6 +198,18 @@ def _build_file_info(rel_path: str, title: str, page_tags: list[str]) -> dict:
         "path": rel_path,
         "title": title,
         "tags": page_tags,
+        "ctime": int(ctime),
+        "mtime": int(mtime),
+    }
+
+
+def _build_page_info(rel_path: str, abs_path: Path, title: str, page_tags: list[str], frontmatter: dict) -> dict:
+    return {
+        "rel_path": rel_path,
+        "path": str(abs_path),
+        "title": title,
+        "tags": page_tags,
+        "frontmatter": frontmatter,
     }
 
 
@@ -207,3 +235,44 @@ def _extract_inline_tags(text: str) -> list[str]:
 
 def _strip_inline_tags(text: str) -> str:
     return INLINE_TAG_RE.sub("", text).strip()
+
+
+def _extract_due_date(text: str) -> str | None:
+    match = DUE_RE.search(text)
+    if match:
+        return match.group(1)
+    return None
+
+
+def _extract_dates(text: str, due: str | None) -> list[str]:
+    matches = [match.group(1) for match in DATE_RE.finditer(text)]
+    if due is None:
+        return matches
+    return [value for value in matches if value != due]
+
+
+def _extract_gtd_projects(text: str) -> list[str]:
+    return [match.group(1) for match in PROJECT_RE.finditer(text)]
+
+
+def _extract_gtd_contexts(text: str) -> list[str]:
+    return [match.group(1) for match in CONTEXT_RE.finditer(text)]
+
+
+def _extract_target_anchor(target: str) -> str | None:
+    if "#" not in target:
+        return None
+    _, anchor = target.split("#", 1)
+    return anchor or None
+
+
+def _resolve_wikilink(current_rel_path: str, target: str) -> str:
+    target_path = target.split("#", 1)[0]
+    if target_path.startswith("/"):
+        base = PurePosixPath(target_path[1:])
+    else:
+        base = PurePosixPath(current_rel_path).parent / target_path
+
+    resolved = base if base.suffix else PurePosixPath(f"{base}.md")
+    normalized = PurePosixPath(resolved)
+    return normalized.as_posix()
