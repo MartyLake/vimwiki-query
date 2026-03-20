@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 import subprocess
 
 
@@ -127,3 +128,32 @@ def test_showcase_section_backlinks_query_outputs_pages_linking_to_project_secti
     assert result.returncode == 0, result.stderr
     assert "# Backlinks to projects/vimwiki-query.md#next" in result.stdout
     assert "- [[/diary/2026-03-18]]" in result.stdout
+
+
+def test_showcase_quest_board_query_emits_sections_and_cards() -> None:
+    result = run_showcase_query("quest-board.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Quest Board" in result.stdout
+    assert "## Needs Decision" in result.stdout
+    assert "## Blocked" in result.stdout
+    assert "## Waiting" in result.stdout
+    assert "## Stale" in result.stdout
+    assert "## Active" in result.stdout
+    assert "## Recently Finished" in result.stdout
+    assert "### [[/projects/blog-pipeline]]" in result.stdout
+    assert "### [[/projects/vimwiki-query]]" in result.stdout
+    assert "No waiting projects." in result.stdout
+
+
+def test_showcase_quest_board_query_uses_card_fields_and_docs_example() -> None:
+    result = run_showcase_query("quest-board.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "Goal:" in result.stdout
+    assert "Reason:" in result.stdout
+    assert "Counts:" in result.stdout
+    assert "Updated:" in result.stdout
+    assert "Updated: 2026-03-20" in result.stdout
+    assert "Updated: 2026-01-01" in result.stdout
+    assert "bash showcase/queries/quest-board.sh" in Path("docs/cookbook.md").read_text(encoding="utf-8")

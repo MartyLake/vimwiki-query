@@ -85,6 +85,15 @@ bin/vimwiki-query scan --root ~/Wiki --format ndjson \
     '
 ```
 
+### Quest Board
+
+```sh
+bash showcase/queries/quest-board.sh
+```
+
+This renders a compact quest board with sections for decision work, blockers,
+waiting work, stale projects, active projects, and recently finished projects.
+
 ### Backlinks To One Project
 
 ```sh
