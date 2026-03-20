@@ -2,8 +2,11 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/wiki"
-bin/vimwiki-query scan --root "$ROOT" --format ndjson \
+SHOWCASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="${SHOWCASE_WIKI_ROOT:-${SHOWCASE_DIR}/wiki}"
+VIMWIKI_QUERY_BIN="${VIMWIKI_QUERY_BIN:-${SHOWCASE_DIR}/../bin/vimwiki-query}"
+
+"$VIMWIKI_QUERY_BIN" scan --root "$ROOT" --format ndjson \
   | jq -r -s '
       def day: 86400;
       def STALE_DAYS: 7;

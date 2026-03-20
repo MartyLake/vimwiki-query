@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import os
+import shutil
 from pathlib import Path
 import subprocess
 
 
-def run_showcase_query(script_name: str) -> subprocess.CompletedProcess[str]:
+def run_showcase_query(script_name: str, *, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    repo_root = Path(__file__).resolve().parents[1]
+    full_env = os.environ.copy()
+    if env:
+        full_env.update(env)
     return subprocess.run(
         ["bash", f"showcase/queries/{script_name}"],
+        cwd=repo_root,
+        env=full_env,
         text=True,
         capture_output=True,
         check=False,
@@ -147,6 +155,7 @@ def test_showcase_quest_board_query_emits_sections_and_cards() -> None:
 
 
 def test_showcase_quest_board_query_uses_card_fields_and_docs_example() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
     result = run_showcase_query("quest-board.sh")
 
     assert result.returncode == 0, result.stderr
@@ -156,4 +165,53 @@ def test_showcase_quest_board_query_uses_card_fields_and_docs_example() -> None:
     assert "Updated:" in result.stdout
     assert "Updated: 2026-03-20" in result.stdout
     assert "Updated: 2026-01-01" in result.stdout
-    assert "bash showcase/queries/quest-board.sh" in Path("docs/cookbook.md").read_text(encoding="utf-8")
+    assert "bash showcase/queries/quest-board.sh" in (repo_root / "docs" / "cookbook.md").read_text(encoding="utf-8")
+
+
+def test_showcase_quest_board_query_honors_injected_root_and_bin_paths(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    wiki_root = tmp_path / "custom-wiki"
+    shutil.copytree(repo_root / "showcase" / "wiki", wiki_root)
+
+    marker = tmp_path / "bin-called"
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    wrapper = bin_dir / "vimwiki-query"
+    wrapper.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                f"touch {marker}",
+                f"exec {repo_root / 'bin' / 'vimwiki-query'} \"$@\"",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    wrapper.chmod(0o755)
+
+    result = run_showcase_query(
+        "quest-board.sh",
+        env={
+            "SHOWCASE_WIKI_ROOT": str(wiki_root),
+            "VIMWIKI_QUERY_BIN": str(wrapper),
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert marker.exists()
+    assert "# Quest Board" in result.stdout
+    assert "### [[/projects/quest-workflow]]" in result.stdout
+
+
+def test_showcase_crm_dashboard_query_emits_sections_and_cards() -> None:
+    result = run_showcase_query("crm-dashboard.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# CRM Dashboard" in result.stdout
+    assert "## Open follow-up" in result.stdout
+    assert "## Waiting reply" in result.stdout
+    assert "## Dormant" in result.stdout
+    assert "### [[/people/Alice]]" in result.stdout
+    assert "### [[/people/Bob]]" in result.stdout
+    assert "No waiting reply contacts." in result.stdout
