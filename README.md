@@ -42,3 +42,18 @@ Example `jq` query for open tasks:
 bin/vimwiki-query scan --root ~/vimwiki --format ndjson \
   | jq -s 'map(select(.type == "task" and (.completed | not)))'
 ```
+
+## Showcase Queries
+
+The repository also includes a small self-contained showcase wiki under
+`showcase/` with runnable query scripts.
+
+Examples:
+
+```sh
+bash showcase/queries/projects-with-open-todos.sh
+bash showcase/queries/quest-board.sh
+```
+
+See `docs/cookbook.md` for more query examples and the showcase query patterns
+they use.
