@@ -24,13 +24,21 @@ def _attach_link_graph(records: list[dict]) -> None:
     outlinks_by_page: dict[str, set[str]] = defaultdict(set)
     inlinks_by_page: dict[str, set[str]] = defaultdict(set)
     section_inlinks: dict[str, list[dict[str, object]]] = defaultdict(list)
-    headings_by_target: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    headings_by_complete: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    headings_by_unique: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    headings_by_anchor: dict[tuple[str, str], list[dict]] = defaultdict(list)
 
     for heading in headings:
         heading["inlinks"] = []
         anchor = heading.get("anchor")
+        anchor_unique = heading.get("anchor_unique")
+        complete_anchor = heading.get("complete_anchor")
+        if complete_anchor:
+            headings_by_complete[(heading["page_id"], complete_anchor)].append(heading)
+        if anchor_unique:
+            headings_by_unique[(heading["page_id"], anchor_unique)].append(heading)
         if anchor:
-            headings_by_target[(heading["page_id"], anchor)].append(heading)
+            headings_by_anchor[(heading["page_id"], anchor)].append(heading)
 
     for record in records:
         if record["type"] != "link" or not record.get("resolved"):
@@ -42,11 +50,15 @@ def _attach_link_graph(records: list[dict]) -> None:
         if target in pages:
             inlinks_by_page[target].add(source)
 
-        resolved_anchor = record.get("resolved_anchor")
-        if not resolved_anchor:
+        resolved_complete_anchor = record.get("resolved_complete_anchor")
+        if not resolved_complete_anchor:
             continue
 
-        candidate_headings = headings_by_target.get((target, resolved_anchor), [])
+        candidate_headings = headings_by_complete.get((target, resolved_complete_anchor), [])
+        if len(candidate_headings) != 1 and "#" not in resolved_complete_anchor:
+            candidate_headings = headings_by_unique.get((target, resolved_complete_anchor), [])
+        if len(candidate_headings) != 1 and "#" not in resolved_complete_anchor:
+            candidate_headings = headings_by_anchor.get((target, resolved_complete_anchor), [])
         if len(candidate_headings) != 1:
             record["resolved_section_id"] = None
             continue

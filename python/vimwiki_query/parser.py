@@ -47,6 +47,7 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
     in_code_fence = False
     current_section = title
     section_stack: list[dict[str, object]] = []
+    previous_anchors: dict[str, int] = {}
 
     for index, line in enumerate(lines, start=1):
         stripped = line.strip()
@@ -66,9 +67,18 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
             while section_stack and int(section_stack[-1]["level"]) >= level:
                 section_stack.pop()
             parent_section_id = str(section_stack[-1]["id"]) if section_stack else None
-            section_path = [str(entry["anchor"]) for entry in section_stack] + [anchor]
+            anchor_unique = _make_unique_anchor(anchor, previous_anchors)
+            section_path = [str(entry["anchor_unique"]) for entry in section_stack] + [anchor_unique]
+            complete_anchor = "#".join(section_path)
             heading_id = f"{rel_path}#heading:{index}"
-            section_stack.append({"id": heading_id, "level": level, "anchor": anchor})
+            section_stack.append(
+                {
+                    "id": heading_id,
+                    "level": level,
+                    "anchor": anchor,
+                    "anchor_unique": anchor_unique,
+                }
+            )
             records.append(
                 {
                     "type": "heading",
@@ -82,7 +92,9 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
                     "tags": page_tags,
                     "level": level,
                     "anchor": anchor,
+                    "anchor_unique": anchor_unique,
                     "section_path": section_path,
+                    "complete_anchor": complete_anchor,
                     "file": file_info,
                 }
             )
@@ -121,6 +133,7 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
             target = match.group(1)
             target_anchor = _extract_target_anchor(target)
             resolved_path = _resolve_wikilink(rel_path, target)
+            resolved_complete_anchor = _normalize_anchor_reference(target_anchor)
             records.append(
                 {
                     "type": "link",
@@ -134,7 +147,8 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
                     "tags": page_tags,
                     "target": target,
                     "target_anchor": target_anchor,
-                    "resolved_anchor": _normalize_anchor(target_anchor) if target_anchor else None,
+                    "resolved_anchor": _normalize_anchor(target_anchor) if target_anchor and "#" not in target_anchor else _extract_last_anchor_segment(resolved_complete_anchor),
+                    "resolved_complete_anchor": resolved_complete_anchor,
                     "resolved_path": resolved_path,
                     "resolved": (root_path / resolved_path).is_file(),
                     "file": file_info,
@@ -297,3 +311,29 @@ def _normalize_anchor(value: str | None) -> str | None:
     normalized = re.sub(r"[^\w\s-]", "", normalized)
     normalized = re.sub(r"[-\s]+", "-", normalized)
     return normalized.strip("-") or None
+
+
+def _make_unique_anchor(anchor: str | None, previous_anchors: dict[str, int]) -> str | None:
+    if anchor is None:
+        return None
+    if anchor in previous_anchors:
+        previous_anchors[anchor] += 1
+        return f"{anchor}-{previous_anchors[anchor]}"
+    previous_anchors[anchor] = 1
+    return anchor
+
+
+def _normalize_anchor_reference(value: str | None) -> str | None:
+    if value is None:
+        return None
+    segments = [_normalize_anchor(segment) for segment in value.split("#")]
+    filtered = [segment for segment in segments if segment]
+    if not filtered:
+        return None
+    return "#".join(filtered)
+
+
+def _extract_last_anchor_segment(value: str | None) -> str | None:
+    if value is None:
+        return None
+    return value.split("#")[-1]

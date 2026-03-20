@@ -22,7 +22,7 @@ def test_scan_json_groups_records_by_type(run_cli, sample_wiki_root) -> None:
     payload = json.loads(result.stdout)
 
     assert list(payload) == ["pages", "tasks", "headings", "links"]
-    assert len(payload["pages"]) == 2
+    assert len(payload["pages"]) == 3
     assert len(payload["tasks"]) == 2
     assert payload["headings"][0]["type"] == "heading"
     assert payload["links"][0]["type"] == "link"
@@ -36,7 +36,7 @@ def test_scan_json_enriches_pages_with_link_graph_and_timestamps(run_cli, sample
     payload = json.loads(result.stdout)
     pages = {page["rel_path"]: page for page in payload["pages"]}
 
-    assert pages["index.md"]["file"]["outlinks"] == ["projects/roadmap.md"]
+    assert pages["index.md"]["file"]["outlinks"] == ["projects/duplicates.md", "projects/roadmap.md"]
     assert pages["index.md"]["file"]["inlinks"] == ["projects/roadmap.md"]
     assert pages["projects/roadmap.md"]["file"]["outlinks"] == ["index.md"]
     assert pages["projects/roadmap.md"]["file"]["inlinks"] == ["index.md"]
@@ -60,6 +60,40 @@ def test_scan_json_enriches_headings_with_anchor_backlinks(run_cli, sample_wiki_
             "rel_path": "index.md",
             "line": 10,
             "source_id": "index.md#link:10:projects/roadmap#Next Steps",
+        }
+    ]
+
+
+def test_scan_json_resolves_long_form_duplicate_heading_links(run_cli, sample_wiki_root) -> None:
+    result = run_cli("scan", "--root", str(sample_wiki_root), "--format", "json")
+
+    assert result.returncode == 0, result.stderr
+
+    payload = json.loads(result.stdout)
+    headings = {heading["id"]: heading for heading in payload["headings"]}
+    links = {link["id"]: link for link in payload["links"]}
+
+    first_duplicate = headings["projects/duplicates.md#heading:3"]
+    second_duplicate = headings["projects/duplicates.md#heading:7"]
+    first_link = links["index.md#link:11:projects/duplicates#Dup Root#Same Heading"]
+    second_link = links["index.md#link:12:projects/duplicates#Dup Root#Same Heading-2"]
+
+    assert first_link["resolved_section_id"] == first_duplicate["id"]
+    assert second_link["resolved_section_id"] == second_duplicate["id"]
+    assert first_duplicate["inlinks"] == [
+        {
+            "page_id": "index.md",
+            "rel_path": "index.md",
+            "line": 11,
+            "source_id": "index.md#link:11:projects/duplicates#Dup Root#Same Heading",
+        }
+    ]
+    assert second_duplicate["inlinks"] == [
+        {
+            "page_id": "index.md",
+            "rel_path": "index.md",
+            "line": 12,
+            "source_id": "index.md#link:12:projects/duplicates#Dup Root#Same Heading-2",
         }
     ]
 

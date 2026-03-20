@@ -79,3 +79,18 @@ def test_parse_markdown_file_emits_section_identity_for_headings(sample_wiki_roo
     assert headings[0]["section_path"] == ["roadmap"]
     assert headings[1]["anchor"] == "next-steps"
     assert headings[1]["section_path"] == ["roadmap", "next-steps"]
+
+
+def test_parse_markdown_file_handles_duplicate_heading_anchors(sample_wiki_root) -> None:
+    records = parse_markdown_file(sample_wiki_root, "projects/duplicates.md")
+
+    headings = [record for record in records if record["type"] == "heading"]
+
+    assert headings[0]["anchor"] == "dup-root"
+    assert headings[0]["anchor_unique"] == "dup-root"
+    assert headings[1]["anchor"] == "same-heading"
+    assert headings[1]["anchor_unique"] == "same-heading"
+    assert headings[1]["complete_anchor"] == "dup-root#same-heading"
+    assert headings[2]["anchor"] == "same-heading"
+    assert headings[2]["anchor_unique"] == "same-heading-2"
+    assert headings[2]["complete_anchor"] == "dup-root#same-heading-2"
