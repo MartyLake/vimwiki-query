@@ -55,6 +55,9 @@ def test_parse_markdown_file_emits_heading_and_link_records(sample_wiki_root) ->
     assert links[0]["target"] == "projects/roadmap"
     assert links[0]["resolved_path"] == "projects/roadmap.md"
     assert links[0]["resolved"] is True
+    assert links[1]["target_anchor"] == "Next Steps"
+    assert links[1]["resolved_anchor"] == "next-steps"
+    assert links[1]["resolved"] is True
 
 
 def test_parse_markdown_file_resolves_relative_and_absolute_vimwiki_links(sample_wiki_root) -> None:
@@ -65,3 +68,14 @@ def test_parse_markdown_file_resolves_relative_and_absolute_vimwiki_links(sample
     assert [link["resolved_path"] for link in links] == ["projects/index.md", "index.md"]
     assert links[0]["resolved"] is False
     assert links[1]["resolved"] is True
+
+
+def test_parse_markdown_file_emits_section_identity_for_headings(sample_wiki_root) -> None:
+    records = parse_markdown_file(sample_wiki_root, "projects/roadmap.md")
+
+    headings = [record for record in records if record["type"] == "heading"]
+
+    assert headings[0]["anchor"] == "roadmap"
+    assert headings[0]["section_path"] == ["roadmap"]
+    assert headings[1]["anchor"] == "next-steps"
+    assert headings[1]["section_path"] == ["roadmap", "next-steps"]

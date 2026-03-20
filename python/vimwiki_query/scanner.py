@@ -20,8 +20,17 @@ def scan_wiki(root: Path | str) -> list[dict]:
 
 def _attach_link_graph(records: list[dict]) -> None:
     pages = {record["rel_path"]: record for record in records if record["type"] == "page"}
+    headings = [record for record in records if record["type"] == "heading"]
     outlinks_by_page: dict[str, set[str]] = defaultdict(set)
     inlinks_by_page: dict[str, set[str]] = defaultdict(set)
+    section_inlinks: dict[str, list[dict[str, object]]] = defaultdict(list)
+    headings_by_target: dict[tuple[str, str], list[dict]] = defaultdict(list)
+
+    for heading in headings:
+        heading["inlinks"] = []
+        anchor = heading.get("anchor")
+        if anchor:
+            headings_by_target[(heading["page_id"], anchor)].append(heading)
 
     for record in records:
         if record["type"] != "link" or not record.get("resolved"):
@@ -33,6 +42,32 @@ def _attach_link_graph(records: list[dict]) -> None:
         if target in pages:
             inlinks_by_page[target].add(source)
 
+        resolved_anchor = record.get("resolved_anchor")
+        if not resolved_anchor:
+            continue
+
+        candidate_headings = headings_by_target.get((target, resolved_anchor), [])
+        if len(candidate_headings) != 1:
+            record["resolved_section_id"] = None
+            continue
+
+        target_heading = candidate_headings[0]
+        record["resolved_section_id"] = target_heading["id"]
+        section_inlinks[target_heading["id"]].append(
+            {
+                "source_id": record["id"],
+                "page_id": source,
+                "rel_path": record["rel_path"],
+                "line": record["line"],
+            }
+        )
+
     for rel_path, page in pages.items():
         page["file"]["outlinks"] = sorted(outlinks_by_page.get(rel_path, set()))
         page["file"]["inlinks"] = sorted(inlinks_by_page.get(rel_path, set()))
+
+    for heading in headings:
+        heading["inlinks"] = sorted(
+            section_inlinks.get(heading["id"], []),
+            key=lambda item: (str(item["rel_path"]), int(item["line"]), str(item["source_id"])),
+        )

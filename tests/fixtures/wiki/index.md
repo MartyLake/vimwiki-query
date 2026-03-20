@@ -7,3 +7,4 @@ tags:
 # Welcome
 
 See [[projects/roadmap]] for current work.
+See [[projects/roadmap#Next Steps]] for the next work section.

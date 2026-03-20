@@ -46,6 +46,7 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
 
     in_code_fence = False
     current_section = title
+    section_stack: list[dict[str, object]] = []
 
     for index, line in enumerate(lines, start=1):
         stripped = line.strip()
@@ -61,18 +62,27 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
             level = len(heading_match.group(1))
             heading_text = heading_match.group(2)
             current_section = heading_text
+            anchor = _normalize_anchor(heading_text)
+            while section_stack and int(section_stack[-1]["level"]) >= level:
+                section_stack.pop()
+            parent_section_id = str(section_stack[-1]["id"]) if section_stack else None
+            section_path = [str(entry["anchor"]) for entry in section_stack] + [anchor]
+            heading_id = f"{rel_path}#heading:{index}"
+            section_stack.append({"id": heading_id, "level": level, "anchor": anchor})
             records.append(
                 {
                     "type": "heading",
-                    "id": f"{rel_path}#heading:{index}",
+                    "id": heading_id,
                     "page_id": rel_path,
-                    "parent_id": None,
+                    "parent_id": parent_section_id,
                     "path": str(abs_path),
                     "rel_path": rel_path,
                     "line": index,
                     "text": heading_text,
                     "tags": page_tags,
                     "level": level,
+                    "anchor": anchor,
+                    "section_path": section_path,
                     "file": file_info,
                 }
             )
@@ -109,6 +119,7 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
 
         for match in WIKILINK_RE.finditer(line):
             target = match.group(1)
+            target_anchor = _extract_target_anchor(target)
             resolved_path = _resolve_wikilink(rel_path, target)
             records.append(
                 {
@@ -122,7 +133,8 @@ def parse_markdown_file(root: Path | str, rel_path: str) -> list[dict]:
                     "text": target,
                     "tags": page_tags,
                     "target": target,
-                    "target_anchor": _extract_target_anchor(target),
+                    "target_anchor": target_anchor,
+                    "resolved_anchor": _normalize_anchor(target_anchor) if target_anchor else None,
                     "resolved_path": resolved_path,
                     "resolved": (root_path / resolved_path).is_file(),
                     "file": file_info,
@@ -276,3 +288,12 @@ def _resolve_wikilink(current_rel_path: str, target: str) -> str:
     resolved = base if base.suffix else PurePosixPath(f"{base}.md")
     normalized = PurePosixPath(resolved)
     return normalized.as_posix()
+
+
+def _normalize_anchor(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    normalized = re.sub(r"[^\w\s-]", "", normalized)
+    normalized = re.sub(r"[-\s]+", "-", normalized)
+    return normalized.strip("-") or None

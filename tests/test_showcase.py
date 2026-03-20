@@ -119,3 +119,11 @@ def test_showcase_project_page_task_query_uses_inherited_frontmatter() -> None:
     assert result.returncode == 0, result.stderr
     assert "# Open tasks from project pages" in result.stdout
     assert "[[/projects/vimwiki-query]] collect backlink query ideas" in result.stdout
+
+
+def test_showcase_section_backlinks_query_outputs_pages_linking_to_project_section() -> None:
+    result = run_showcase_query("section-backlinks-vimwiki-query-next.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Backlinks to projects/vimwiki-query.md#next" in result.stdout
+    assert "- [[/diary/2026-03-18]]" in result.stdout

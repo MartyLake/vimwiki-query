@@ -44,6 +44,26 @@ def test_scan_json_enriches_pages_with_link_graph_and_timestamps(run_cli, sample
     assert isinstance(pages["index.md"]["file"]["ctime"], int)
 
 
+def test_scan_json_enriches_headings_with_anchor_backlinks(run_cli, sample_wiki_root) -> None:
+    result = run_cli("scan", "--root", str(sample_wiki_root), "--format", "json")
+
+    assert result.returncode == 0, result.stderr
+
+    payload = json.loads(result.stdout)
+    headings = {heading["id"]: heading for heading in payload["headings"]}
+    next_steps = headings["projects/roadmap.md#heading:12"]
+
+    assert next_steps["anchor"] == "next-steps"
+    assert next_steps["inlinks"] == [
+        {
+            "page_id": "index.md",
+            "rel_path": "index.md",
+            "line": 10,
+            "source_id": "index.md#link:10:projects/roadmap#Next Steps",
+        }
+    ]
+
+
 def test_scan_rejects_missing_root(run_cli, sample_wiki_root) -> None:
     missing_root = sample_wiki_root / "missing"
     result = run_cli("scan", "--root", str(missing_root), "--format", "ndjson")

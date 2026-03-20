@@ -102,6 +102,24 @@ bin/vimwiki-query scan --root ~/Wiki --format json \
     '
 ```
 
+### Backlinks To One Project Section
+
+This uses heading anchors normalized by the scanner.
+
+```sh
+TARGET='projects/vimwiki-query.md#next'
+bin/vimwiki-query scan --root ~/Wiki --format json \
+  | jq -r --arg target "$TARGET" '
+      "# Backlinks to \($target)",
+      (
+        .headings
+        | map(select((.page_id + "#" + .anchor) == $target))
+        | .[0].inlinks[]
+        | "- [[/" + (.rel_path | sub("\\.md$"; "")) + "]]"
+      )
+    '
+```
+
 ### Open Tasks From Project Pages
 
 This uses task inheritance from the owning page frontmatter.
