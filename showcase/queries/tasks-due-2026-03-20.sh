@@ -2,10 +2,11 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/wiki"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
 DUE='2026-03-20'
 
-bin/vimwiki-query scan --root "$ROOT" --format json \
+"$VIMWIKI_QUERY_BIN" scan --root "$ROOT" --format json \
   | jq -r --arg due "$DUE" '
       "# Tasks due \($due)",
       (

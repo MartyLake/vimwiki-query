@@ -2,9 +2,10 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/wiki"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
 
-bin/vimwiki-query scan --root "$ROOT" --format ndjson \
+"$VIMWIKI_QUERY_BIN" scan --root "$ROOT" --format ndjson \
   | jq -r -s '
       map(select(.type == "page" and .frontmatter.type == "blog-post"))
       | sort_by(.frontmatter.status, .rel_path)

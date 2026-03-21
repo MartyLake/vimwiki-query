@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-SHOWCASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ROOT="${SHOWCASE_WIKI_ROOT:-${SHOWCASE_DIR}/wiki}"
-VIMWIKI_QUERY_BIN="${VIMWIKI_QUERY_BIN:-${SHOWCASE_DIR}/../bin/vimwiki-query}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
 
 "$VIMWIKI_QUERY_BIN" scan --root "$ROOT" --format ndjson \
   | jq -r -s '

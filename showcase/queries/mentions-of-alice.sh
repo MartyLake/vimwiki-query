@@ -2,10 +2,11 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/wiki"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
 PERSON='/people/Alice'
 
-bin/vimwiki-query scan --root "$ROOT" --format ndjson \
+"$VIMWIKI_QUERY_BIN" scan --root "$ROOT" --format ndjson \
   | jq -r -s --arg person "$PERSON" '
       "# Mentions of \($person)",
       (

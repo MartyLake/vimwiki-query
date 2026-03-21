@@ -8,6 +8,7 @@ by the real scanner:
 - skill pages live under `showcase/wiki/skill/`
 - projects are identified by frontmatter convention
 - diary tasks mention projects through wiki links
+- query scripts honor `SHOWCASE_WIKI_ROOT` and `VIMWIKI_QUERY_BIN` overrides
 
 Example:
 

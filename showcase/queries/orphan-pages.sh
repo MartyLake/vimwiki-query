@@ -2,9 +2,10 @@
 
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/wiki"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_common.sh"
 
-bin/vimwiki-query scan --root "$ROOT" --format json \
+"$VIMWIKI_QUERY_BIN" scan --root "$ROOT" --format json \
   | jq -r '
       "# Orphan pages",
       (

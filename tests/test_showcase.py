@@ -215,3 +215,14 @@ def test_showcase_crm_dashboard_query_emits_sections_and_cards() -> None:
     assert "### [[/people/Alice]]" in result.stdout
     assert "### [[/people/Bob]]" in result.stdout
     assert "No waiting reply contacts." in result.stdout
+
+
+def test_showcase_deadlinks_query_outputs_unresolved_links() -> None:
+    result = run_showcase_query("deadlinks.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Deadlinks" in result.stdout
+    assert "## [[/scratch/lonely-note]]" in result.stdout
+    assert "/projects/missing-showcase-page" in result.stdout
+    assert "Contents" not in result.stdout
+    assert "Backlinks" not in result.stdout
