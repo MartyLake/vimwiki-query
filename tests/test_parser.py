@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from vimwiki_query.parser import parse_markdown_file
 
 
@@ -70,6 +72,45 @@ def test_parse_markdown_file_resolves_relative_and_absolute_vimwiki_links(sample
     assert links[1]["resolved"] is True
 
 
+def test_parse_markdown_file_emits_markdown_link_records(tmp_path) -> None:
+    root = tmp_path / "wiki"
+    root.mkdir()
+    (root / "index.md").write_text("# Home\n", encoding="utf-8")
+    project_dir = root / "projects"
+    project_dir.mkdir()
+    (project_dir / "roadmap.md").write_text(
+        "\n".join(
+            [
+                "# Roadmap",
+                "",
+                "See [home note](../index.md) for context.",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    records = parse_markdown_file(root, "projects/roadmap.md")
+
+    links = [record for record in records if record["type"] == "link" and record["text"] == "home note"]
+
+    assert links[0]["target"] == "../index.md"
+    assert links[0]["resolved_path"] == "index.md"
+    assert links[0]["resolved"] is True
+
+
+def test_parse_markdown_file_marks_external_markdown_links(tmp_path) -> None:
+    root = tmp_path / "wiki"
+    root.mkdir()
+    (root / "index.md").write_text("# Home\n\nSee [OpenAI](https://openai.com).\n", encoding="utf-8")
+
+    records = parse_markdown_file(root, "index.md")
+
+    links = [record for record in records if record["type"] == "link" and record["text"] == "OpenAI"]
+
+    assert links[0]["is_external"] is True
+    assert links[0]["resolved"] is False
+
+
 def test_parse_markdown_file_emits_section_identity_for_headings(sample_wiki_root) -> None:
     records = parse_markdown_file(sample_wiki_root, "projects/roadmap.md")
 
@@ -94,3 +135,23 @@ def test_parse_markdown_file_handles_duplicate_heading_anchors(sample_wiki_root)
     assert headings[2]["anchor"] == "same-heading"
     assert headings[2]["anchor_unique"] == "same-heading-2"
     assert headings[2]["complete_anchor"] == "dup-root#same-heading-2"
+
+
+def test_parse_markdown_file_falls_back_for_symbol_only_heading_anchors(tmp_path) -> None:
+    root = tmp_path / "wiki"
+    root.mkdir()
+    project_dir = root / "projects"
+    project_dir.mkdir()
+    (project_dir / "symbols.md").write_text(
+        "# Symbols\n\n## !!!\n\nSymbol heading.\n",
+        encoding="utf-8",
+    )
+
+    records = parse_markdown_file(root, "projects/symbols.md")
+
+    headings = [record for record in records if record["type"] == "heading"]
+
+    assert headings[0]["anchor"] == "symbols"
+    assert headings[1]["anchor"] == "heading-3"
+    assert headings[1]["anchor_unique"] == "heading-3"
+    assert headings[1]["complete_anchor"] == "symbols#heading-3"

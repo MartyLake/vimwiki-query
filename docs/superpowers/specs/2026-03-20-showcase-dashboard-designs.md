@@ -259,7 +259,7 @@ The first slice is parameterless.
 
 ### Output Shape
 
-Each person should render as a compact bullet showing:
+Each person should render as a compact card showing:
 
 - person link
 - status
@@ -272,6 +272,9 @@ Only explicit links count. The query should not use raw-name matching.
 
 The first slice should not infer `last_contact` from diary mentions.
 
+Zero-signal people should still appear in the `Dormant` section so the board is
+useful for backfill and cleanup.
+
 ### Ordering
 
 People should be ordered by:
@@ -281,6 +284,23 @@ People should be ordered by:
 3. oldest `last_contact` first
 4. oldest `last updated` first
 5. path alphabetical
+
+### Sections
+
+The first slice should use these sections, in this order:
+
+1. `Open follow-up`
+2. `Waiting reply`
+3. `Dormant`
+
+Task tags map to the CRM board as follows:
+
+- `#waiting` => `Waiting reply`
+
+`Dormant` is a derived recency bucket, not a tag. It groups people with no
+current open follow-up signal.
+
+Archived people should be omitted entirely from the first slice.
 
 ## Research / Source Inbox
 

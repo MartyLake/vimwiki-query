@@ -1,6 +1,6 @@
 ---
 name: quest
-description: Use when an agent is operating under a dedicated wiki quest workflow and the user asks to choose a quest, draft a checkpoint, or propose a split. The skill supports `/quests`, `/checkpoint`, and `/split` with human approval before any durable wiki change.
+description: Use when an agent is operating under the showcase-backed wiki quest workflow and the user asks to choose a quest, draft a checkpoint, or propose a split. The skill uses the existing showcase query and sample pages, and supports `/quests`, `/checkpoint`, and `/split` with human approval before any durable wiki change.
 ---
 
 # Quest
@@ -9,6 +9,9 @@ description: Use when an agent is operating under a dedicated wiki quest workflo
 
 Use this skill for the dedicated quest flow:
 
+- `showcase/queries/quest-board.sh` to inspect open quests in the showcase
+- `showcase/wiki/projects/quest-workflow.md` as the sample active quest page
+- `showcase/wiki/skill/quest.md` as the sample skill-oriented quest page
 - `/quests` to suggest the active quest for this session
 - `/checkpoint` to draft a checkpoint for the active quest
 - `/split` to draft a split proposal when the quest has drifted or grown too large
@@ -26,10 +29,11 @@ Use `/quests` when the session does not yet have an active quest.
 
 Process:
 
-1. Inspect open quests.
-2. Suggest the best match for the current session.
-3. State briefly why it matches.
-4. Wait for the human to say YES.
+1. Run or read `bash showcase/queries/quest-board.sh`.
+2. Inspect the open quests shown there, with the showcase project pages as the source of truth.
+3. Suggest the best match for the current session.
+4. State briefly why it matches.
+5. Wait for the human to say YES.
 
 If the fit is unclear, say so and ask for clarification instead of guessing.
 

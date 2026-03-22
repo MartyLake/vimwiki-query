@@ -1,0 +1,75 @@
+# SnipMate snippets for Markdown-syntax Vimwiki pages.
+#
+# Copy this file into your Vim SnipMate snippets directory or point your setup
+# at the repo copy directly.
+
+snippet project
+	---
+	type: project
+	status: active
+	goal: ${1:project goal}
+	next_step: ${2:next step}
+	tags:
+	  - ${3:tag}
+	---
+	
+	# ${4:Project Title}
+	
+	Goal: ${1:project goal}
+	
+	## Next
+	
+	- [ ] ${2:next step}
+
+snippet person
+	---
+	type: person
+	status: active
+	last_contact: ${1:YYYY-MM-DD}
+	tags:
+	  - ${2:tag}
+	---
+	
+	# ${3:Person Name}
+	
+	Goal: ${4:relationship goal}
+
+snippet meeting
+	---
+	type: meeting
+	date: ${1:YYYY-MM-DD}
+	with:
+	  - ${2:person}
+	project: ${3:/projects/example}
+	tags:
+	  - meeting
+	---
+	
+	# ${4:Meeting Title}
+	
+	## Notes
+	
+	- ${5:action item}
+
+snippet source
+	---
+	type: source
+	status: inbox
+	topic: ${1:topic}
+	url: ${2:https://example.com}
+	tags:
+	  - source
+	---
+	
+	# ${3:Source Title}
+	
+	## Notes
+	
+	- ${4:key takeaways}
+
+snippet diary
+	# ${1:YYYY-MM-DD}
+	
+	## ${2:Section}
+	
+	- [ ] ${3:task}

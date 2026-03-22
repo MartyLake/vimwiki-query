@@ -94,6 +94,15 @@ bash showcase/queries/quest-board.sh
 This renders a compact quest board with sections for decision work, blockers,
 waiting work, stale projects, active projects, and recently finished projects.
 
+### CRM Dashboard
+
+```sh
+bash showcase/queries/crm-dashboard.sh
+```
+
+This renders a compact CRM dashboard with sections for open follow-ups,
+waiting replies, and dormant contacts.
+
 ### Backlinks To One Project
 
 ```sh
@@ -146,6 +155,16 @@ bin/vimwiki-query scan --root ~/Wiki --format json \
       )
     '
 ```
+
+### Deadlinks
+
+```sh
+bash showcase/queries/deadlinks.sh
+```
+
+This lists unresolved wiki links grouped by the source note that contains
+them. Navigation sections like `Contents` and `Backlinks` are intentionally
+ignored in this report.
 
 ## Blog Posts
 

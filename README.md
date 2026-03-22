@@ -53,7 +53,25 @@ Examples:
 ```sh
 bash showcase/queries/projects-with-open-todos.sh
 bash showcase/queries/quest-board.sh
+bash showcase/queries/crm-dashboard.sh
+bash showcase/queries/deadlinks.sh
 ```
 
 See `docs/cookbook.md` for more query examples and the showcase query patterns
 they use.
+
+## SnipMate Snippets
+
+A reference SnipMate snippet pack lives at
+[`snippets/markdown.snippets`](/Users/mtt/.vim/bundle/vimwiki-query/snippets/markdown.snippets).
+
+It includes templates for:
+
+- `project`
+- `person`
+- `meeting`
+- `source`
+- `diary`
+
+The file is a drop-in starting point for Markdown-syntax Vimwiki pages. Copy it
+into your SnipMate snippets directory or point Vim at the repo copy directly.
