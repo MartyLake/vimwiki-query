@@ -51,6 +51,12 @@ The repository also includes a small self-contained showcase wiki under
 Examples:
 
 ```sh
+bash showcase/queries/weekly-review.sh
+bash showcase/queries/project-health-dashboard.sh
+bash showcase/queries/project-task-rollup.sh
+bash showcase/queries/meeting-action-item-inbox.sh
+bash showcase/queries/research-source-inbox.sh
+bash showcase/queries/timeframe-tasks.sh
 bash showcase/queries/projects-with-open-todos.sh
 bash showcase/queries/quest-board.sh
 bash showcase/queries/crm-dashboard.sh

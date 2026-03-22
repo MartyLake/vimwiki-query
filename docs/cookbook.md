@@ -156,6 +156,30 @@ bin/vimwiki-query scan --root ~/Wiki --format json \
     '
 ```
 
+### Project Health Dashboard
+
+```sh
+TODAY=2026-03-20 bash showcase/queries/project-health-dashboard.sh
+```
+
+This shows per-project open, due-soon, waiting/blocked, and diary mention counts.
+
+### Project Task Rollup
+
+```sh
+PROJECT=/projects/vimwiki-query bash showcase/queries/project-task-rollup.sh
+```
+
+This splits a single project into tasks on the project page and diary mentions.
+
+### Weekly Review
+
+```sh
+WEEK=2026-W12 bash showcase/queries/weekly-review.sh
+```
+
+This emits a markdown weekly review report with diary tasks, mentions, due-this-week tasks, and updated notes.
+
 ### Deadlinks
 
 ```sh
@@ -165,6 +189,26 @@ bash showcase/queries/deadlinks.sh
 This lists unresolved wiki links grouped by the source note that contains
 them. Navigation sections like `Contents` and `Backlinks` are intentionally
 ignored in this report.
+
+## Meeting / Source / Timeframe
+
+### Meeting Action-Item Inbox
+
+```sh
+bash showcase/queries/meeting-action-item-inbox.sh
+```
+
+### Research Source Inbox
+
+```sh
+bash showcase/queries/research-source-inbox.sh
+```
+
+### Timeframe Tasks
+
+```sh
+bash showcase/queries/timeframe-tasks.sh
+```
 
 ## Blog Posts
 

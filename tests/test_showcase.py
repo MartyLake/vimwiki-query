@@ -204,6 +204,75 @@ def test_showcase_quest_board_query_honors_injected_root_and_bin_paths(tmp_path:
     assert "### [[/projects/quest-workflow]]" in result.stdout
 
 
+def test_showcase_weekly_review_query_outputs_sections() -> None:
+    result = run_showcase_query("weekly-review.sh", env={"WEEK": "2026-W12"})
+
+    assert result.returncode == 0, result.stderr
+    assert "# Weekly Review 2026-W12" in result.stdout
+    assert "## Open Diary Tasks" in result.stdout
+    assert "## Done This Week" in result.stdout
+    assert "## Project Mentions" in result.stdout
+    assert "## People Mentions" in result.stdout
+    assert "## Due This Week" in result.stdout
+    assert "## Active Projects Not Updated This Week" in result.stdout
+    assert "## Updated Notes Outside Diary" in result.stdout
+    assert "[[/projects/blog-pipeline]]" in result.stdout
+    assert "[[/people/Alice]]" in result.stdout
+
+
+def test_showcase_project_health_dashboard_query_outputs_project_rows() -> None:
+    result = run_showcase_query("project-health-dashboard.sh", env={"TODAY": "2026-03-20"})
+
+    assert result.returncode == 0, result.stderr
+    assert "# Project Health Dashboard" in result.stdout
+    assert "[[/projects/vimwiki-query]]" in result.stdout
+    assert "[[/projects/blog-pipeline]]" in result.stdout
+    assert "due-soon" in result.stdout
+
+
+def test_showcase_project_task_rollup_query_outputs_both_sections() -> None:
+    result = run_showcase_query("project-task-rollup.sh", env={"PROJECT": "/projects/vimwiki-query"})
+
+    assert result.returncode == 0, result.stderr
+    assert "# Task Rollup for [[/projects/vimwiki-query]]" in result.stdout
+    assert "## Project Page" in result.stdout
+    assert "## Diary Mentions" in result.stdout
+    assert "[[/diary/2026-03-18]] review the [[/projects/vimwiki-query#Next]] section before planning" in result.stdout
+
+
+def test_showcase_meeting_action_item_inbox_query_outputs_meeting_tasks() -> None:
+    result = run_showcase_query("meeting-action-item-inbox.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Meeting Action-Item Inbox" in result.stdout
+    assert "## [[/meetings/2026-03-18-team-sync]]" in result.stdout
+    assert "send follow-up notes to [[/people/Alice]]" in result.stdout
+
+
+def test_showcase_research_source_inbox_query_outputs_inbox_and_reading_sources() -> None:
+    result = run_showcase_query("research-source-inbox.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Research Source Inbox" in result.stdout
+    assert "## Inbox" in result.stdout
+    assert "## Reading" in result.stdout
+    assert "[[/sources/2026-03-19-paper-note]]" in result.stdout
+    assert "[[/sources/2026-03-18-reading-note]]" in result.stdout
+
+
+def test_showcase_timeframe_tasks_query_outputs_phrase_buckets() -> None:
+    result = run_showcase_query("timeframe-tasks.sh")
+
+    assert result.returncode == 0, result.stderr
+    assert "# Timeframe Tasks" in result.stdout
+    assert "## Today" in result.stdout
+    assert "## This Week" in result.stdout
+    assert "## This Month" in result.stdout
+    assert "## This Year" in result.stdout
+    assert "note what happened today" in result.stdout
+    assert "summarize this week" in result.stdout
+
+
 def test_showcase_crm_dashboard_query_emits_sections_and_cards() -> None:
     result = run_showcase_query("crm-dashboard.sh")
 
@@ -214,7 +283,7 @@ def test_showcase_crm_dashboard_query_emits_sections_and_cards() -> None:
     assert "## Dormant" in result.stdout
     assert "### [[/people/Alice]]" in result.stdout
     assert "### [[/people/Bob]]" in result.stdout
-    assert "No waiting reply contacts." in result.stdout
+    assert "## Waiting reply" in result.stdout
 
 
 def test_showcase_deadlinks_query_outputs_unresolved_links() -> None:
